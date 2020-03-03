@@ -26,15 +26,12 @@ import tensorflow.compat.v2 as tf
 
 class VariableLayer(tf.keras.layers.Layer):
   """Simply returns a (trainable) variable, regardless of input.
-
   This layer implements the mathematical function `f(x) = c` where `c` is a
   constant, i.e., unchanged for all `x`. Like other Keras layers, the constant
   is `trainable`.  This layer can also be interpretted as the special case of
   `tf.keras.layers.Dense` when the `kernel` is forced to be the zero matrix
   (`tf.zeros`).
-
   #### Examples
-
   ```python
   trainable_normal = tf.keras.models.Sequential([
       tfp.layers.VariableLayer(
@@ -50,27 +47,19 @@ class VariableLayer(tf.keras.layers.Layer):
   ])
   negloglik = lambda x, rv_x: -rv_x.log_prob(x)
   trainable_normal.compile(optimizer='adam', loss=negloglik)
-
   # trainable_normal.fit(dataset)
-
   x = trainable_normal(0.)  # `0.` ignored; like conditioning on emptyset.
-
   x.dtype
   # ==> tf.float64
-
   x.batch_shape
   # ==> [3]
-
   x.event_shape
   # ==> [4]
-
   x.mean()
   # ==> tf.reduce_mean(dataset)
-
   x.variance()
   # ==> tfp.stats.variance(dataset)
   ```
-
   """
 
   def __init__(self,
@@ -82,7 +71,6 @@ class VariableLayer(tf.keras.layers.Layer):
                constraint=None,
                **kwargs):
     """Creates the `VariableLayer`.
-
     Arguments:
       shape: integer or integer vector specifying the shape of the output of
         this layer.
@@ -137,3 +125,15 @@ class VariableLayer(tf.keras.layers.Layer):
     if self.activation is None:
       return x
     return self.activation(x)
+
+  def get_config(self):
+    config = {
+        'shape': self._var.shape,
+        'activation': (tf.keras.activations.serialize(self.activation)
+                       if self.activation else None),
+        'initializer': tf.keras.initializers.serialize(self.initializer),
+        'regularizer': tf.keras.regularizers.serialize(self.regularizer),
+        'constraint': tf.keras.constraints.serialize(self.constraint)
+    }
+    base_config = super(VariableLayer, self).get_config()
+    return dict(list(base_config.items()) + list(config.items()))
